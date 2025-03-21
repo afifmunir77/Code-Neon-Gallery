@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code: Neon Gallery</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .filters { margin-bottom: 20px; }
+        .filters div { margin: 10px 0; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { cursor: pointer; }
+        tr:hover { background-color: #f5f5f5; }
+        .total-shards { font-weight: bold; margin-top: 20px; }
+        .slider-container { display: flex; align-items: center; gap: 10px; }
+        .footer { margin-top: 40px; text-align: center; color: #666; font-size: 0.9em; }
+        
+        /* OVR-based row coloring */
+        .ovr-107 { background-color: #e6f7d4; }
+        .ovr-106 { background-color: #d4f1f4; }
+        .ovr-105 { background-color: #ffd6d6; }
+    </style>
+</head>
+<body>
+    <h1>Code: Neon Gallery</h1>
+    <div class="filters">
+        <div>
+            <input type="text" id="nameFilter" placeholder="Search by name..." oninput="applyFilters()">
+        </div>
+        <div>
+            <label for="positionFilter">Position:</label>
+            <select id="positionFilter" onchange="applyFilters()">
+                <option value="">All</option>
+            </select>
+        </div>
+        <div>
+            <label for="ovrFilter">OVR:</label>
+            <select id="ovrFilter" onchange="applyFilters()">
+                <option value="">All</option>
+            </select>
+        </div>
+        <div class="slider-container">
+            <label for="shardsFilter">Max Shards:</label>
+            <input type="range" id="shardsFilter" min="300" max="1500" step="50" value="1500" oninput="updateShardsDisplay()">
+            <span id="shardsValue">1500</span>
+        </div>
+        <div>
+            <label for="sortColumn">Sort By:</label>
+            <select id="sortColumn" onchange="applySort()">
+                <option value="Name">Name</option>
+                <option value="Position">Position</option>
+                <option value="OVR">OVR</option>
+                <option value="Shards">Shards</option>
+            </select>
+            <select id="sortOrder" onchange="applySort()">
+                <option value="asc">Ascending</option>
+                <option value="desc">Descending</option>
+            </select>
+        </div>
+    </div>
+
+    <table id="playerTable">
+        <thead>
+            <tr>
+                <th>Select</th>
+                <th>Name</th>
+                <th>Position</th>
+                <th>OVR</th>
+                <th>Shards</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <div class="total-shards">Total Shards: <span id="totalShards">0</span></div>
+    <div class="footer">Developer: Tokuchi_Toa_77</div>
+
+    <script>
+        const players = [
+            {Name: "Moore", Position: "CB", OVR: 107, Shards: 800},
+            {Name: "Oshimhen", Position: "ST", OVR: 107, Shards: 800},
+            {Name: "Maradona", Position: "CAM", OVR: 107, Shards: 1500},
+            {Name: "Goretzka", Position: "CM", OVR: 107, Shards: 1000},
+            {Name: "Di Natale", Position: "CAM", OVR: 107, Shards: 800},
+            {Name: "Kvaratskhelia", Position: "ST", OVR: 107, Shards: 1000},
+            {Name: "Ceck", Position: "GK", OVR: 107, Shards: 1000},
+            {Name: "Walker", Position: "RB", OVR: 107, Shards: 1000},
+            {Name: "Essien", Position: "CDM", OVR: 107, Shards: 800},
+            {Name: "Kuyt", Position: "CM", OVR: 107, Shards: 800},
+            {Name: "Blanc", Position: "CB", OVR: 107, Shards: 1250},
+            {Name: "Riise", Position: "LB", OVR: 107, Shards: 1000},
+            {Name: "Tadic", Position: "RW", OVR: 106, Shards: 500},
+            {Name: "Trent", Position: "RB", OVR: 106, Shards: 800},
+            {Name: "Huijsen", Position: "CB", OVR: 106, Shards: 500},
+            {Name: "Sels", Position: "GK", OVR: 106, Shards: 500},
+            {Name: "Hagi", Position: "RM", OVR: 106, Shards: 650},
+            {Name: "Guendouzi", Position: "CDM", OVR: 106, Shards: 500},
+            {Name: "Klose", Position: "ST", OVR: 106, Shards: 500},
+            {Name: "Diallo", Position: "RW", OVR: 106, Shards: 500},
+            {Name: "Vitinha", Position: "CM", OVR: 106, Shards: 500},
+            {Name: "R. Leao", Position: "LW", OVR: 106, Shards: 800},
+            {Name: "Gibbs-White", Position: "CAM", OVR: 106, Shards: 500},
+            {Name: "Thuram", Position: "ST", OVR: 106, Shards: 650},
+            {Name: "Nakata", Position: "CAM", OVR: 105, Shards: 300},
+            {Name: "Pedro", Position: "LW", OVR: 105, Shards: 300},
+            {Name: "Mitoma", Position: "LM", OVR: 105, Shards: 450},
+            {Name: "Mateta", Position: "ST", OVR: 105, Shards: 450},
+            {Name: "Ake", Position: "CB", OVR: 105, Shards: 450},
+            {Name: "Vialli", Position: "ST", OVR: 105, Shards: 300},
+            {Name: "P. Futre", Position: "LW", OVR: 105, Shards: 300},
+            {Name: "Bellanova", Position: "RB", OVR: 105, Shards: 300},
+            {Name: "Thuram", Position: "CM", OVR: 105, Shards: 450},
+            {Name: "Pickford", Position: "GK", OVR: 105, Shards: 300},
+            {Name: "Kanu", Position: "ST", OVR: 105, Shards: 300},
+            {Name: "Orsolini", Position: "RW", OVR: 105, Shards: 300}
+        ];
+
+        let selectedPlayers = new Set(JSON.parse(localStorage.getItem('selectedPlayers')) || []);
+
+        function populateFilters() {
+            const positions = [...new Set(players.map(p => p.Position))];
+            const ovrValues = [...new Set(players.map(p => p.OVR))].sort((a, b) => b - a);
+
+            const positionFilter = document.getElementById('positionFilter');
+            positions.forEach(pos => {
+                const option = document.createElement('option');
+                option.value = pos;
+                option.textContent = pos;
+                positionFilter.appendChild(option);
+            });
+
+            const ovrFilter = document.getElementById('ovrFilter');
+            ovrValues.forEach(ovr => {
+                const option = document.createElement('option');
+                option.value = ovr;
+                option.textContent = ovr;
+                ovrFilter.appendChild(option);
+            });
+        }
+
+        function updateShardsDisplay() {
+            const slider = document.getElementById('shardsFilter');
+            document.getElementById('shardsValue').textContent = slider.value;
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const nameFilter = document.getElementById('nameFilter').value.toLowerCase();
+            const positionFilter = document.getElementById('positionFilter').value;
+            const ovrFilter = document.getElementById('ovrFilter').value;
+            const shardsFilter = parseInt(document.getElementById('shardsFilter').value);
+
+            let filtered = players.filter(p => 
+                p.Name.toLowerCase().includes(nameFilter) &&
+                (positionFilter === "" || p.Position === positionFilter) &&
+                (ovrFilter === "" || p.OVR === parseInt(ovrFilter)) &&
+                p.Shards <= shardsFilter
+            );
+
+            applySortAndRender(filtered);
+        }
+
+        function applySort() {
+            applyFilters();
+        }
+
+        function applySortAndRender(filteredPlayers) {
+            const sortColumn = document.getElementById('sortColumn').value;
+            const sortOrder = document.getElementById('sortOrder').value;
+
+            filteredPlayers.sort((a, b) => {
+                if (a[sortColumn] < b[sortColumn]) return sortOrder === 'asc' ? -1 : 1;
+                if (a[sortColumn] > b[sortColumn]) return sortOrder === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            renderTable(filteredPlayers);
+        }
+
+        function renderTable(playersList) {
+            const tbody = document.querySelector('#playerTable tbody');
+            tbody.innerHTML = '';
+
+            playersList.forEach(player => {
+                const row = document.createElement('tr');
+                row.className = `ovr-${player.OVR}`;
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.dataset.shards = player.Shards;
+                checkbox.checked = selectedPlayers.has(player.Shards);
+                checkbox.onchange = () => togglePlayerSelection(checkbox);
+
+                row.innerHTML = `
+                    <td></td>
+                    <td>${player.Name}</td>
+                    <td>${player.Position}</td>
+                    <td>${player.OVR}</td>
+                    <td>${player.Shards}</td>
+                `;
+                
+                row.cells[0].appendChild(checkbox);
+                tbody.appendChild(row);
+            });
+        }
+
+        function togglePlayerSelection(checkbox) {
+            const shards = parseInt(checkbox.dataset.shards);
+            checkbox.checked ? selectedPlayers.add(shards) : selectedPlayers.delete(shards);
+            localStorage.setItem('selectedPlayers', JSON.stringify([...selectedPlayers]));
+            updateTotalShards();
+        }
+
+        function updateTotalShards() {
+            const total = Array.from(selectedPlayers).reduce((sum, val) => sum + val, 0);
+            document.getElementById('totalShards').textContent = total;
+        }
+
+        populateFilters();
+        applyFilters();
+        updateTotalShards();
+    </script>
+</body>
+</html>
